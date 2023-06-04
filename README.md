@@ -9,7 +9,7 @@ Can be found at https://www.tarantool.io/ru/doc/latest/
 #### Tech
 - Tarantool
 - Lua 
-- The http, resty.router and cjson lib
+- http, resty.router and cjson Lua-libs
 
 #### Testing and usage
 To start the server, run the command:
