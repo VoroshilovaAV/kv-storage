@@ -7,11 +7,33 @@ local tarantool = require("tarantool")
 local config = require("config")
 local tarantool_config = config.tarantool
 
+-- Creating a connection to tarantool
+local conn = tarantool.connect(tarantool_config.host, tarantool_config.port)
+
+-- Creating namespace
+conn:wait_full()
+local space = conn.space.data or conn:execute([[box.schema.create_space('data')]])
+space:create_index('primary', { type = 'tree', parts = {1, 'string'} })
+
+-- Calls to tarantool API functions
+local function get(key)
+    local result = space:get(key)
+    return result and result[2] or nil
+end
+
+local function set(key, value)
+    space:replace({key, value})
+end
+
+local function delete(key)
+    space:delete(key)
+end
+
+-- Creating a router and request handlers
 local r = router:new()
 
--- GET request handler
 r:get("/data/:key", function(params)
-    local value = storage.get(params.key)
+    local value = get(params.key)
     if not value then
         return {status = 404}
     end
@@ -19,7 +41,6 @@ r:get("/data/:key", function(params)
     return {status = 200, body = json.encode(value)}
 end)
 
--- POST request handler
 r:post("/data", function()
     local headers = ngx.req.get_headers()
     local rpc_count = tonumber(headers["X-Rpc-Count"])
@@ -30,13 +51,12 @@ r:post("/data", function()
 
     local data = http.request_body_data()
 
-    storage.set(data.key, data.value)
+    set(data.key, data.value)
     return {status = 200}
 end)
 
--- DELETE request handler
 r:delete("/data/:key", function(params)
-    storage.delete(params.key)
+    delete(params.key)
 
     return {status = 200}
 end)
