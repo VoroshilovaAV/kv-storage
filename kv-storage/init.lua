@@ -2,8 +2,10 @@ local http = require("http")
 local router = require("resty.router")
 local json = require("cjson")
 
-local storage = require("storage")
+local tarantool = require("tarantool")
+
 local config = require("config")
+local tarantool_config = config.tarantool
 
 local r = router:new()
 
